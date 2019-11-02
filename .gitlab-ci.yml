@@ -1,0 +1,60 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  #name: "RebootEnchant"
+  path: "/builds/$CI_PROJECT_PATH"
+
+build:
+  stage: build
+  image: maven:3.5.3-jdk-11
+  script:
+    #- find $path/ -type f -name "*.xml" -print0 | xargs -0 sed -i -e s/maven-version-number/$version/g
+    #- find $path/ -type f -name "*.yml" -print0 | xargs -0 sed -i -e s/maven-version-number/$version/g
+    - mvn clean package
+    - find $path/ -depth -path '*original*' -delete
+    - mv $path/target/*.jar $path/
+  artifacts:
+    name: $CI_PROJECT_NAME-$version
+    paths:
+      - "$path/*.jar"
+deploy-ftp:
+  stage: deploy
+  only:
+    - master
+  script:
+    - apt-get update -qq && apt-get install -y -qq lftp
+    - mkdir /upload
+    - cp *.jar /upload
+    - cd /upload
+    - lftp -c "set ftp:ssl-allow no; open -u $USERNAME,$PASSWORD $HOST; mirror -Rev ./ ./httpdocs/$CI_PROJECT_NAME  --ignore-time --parallel=10 --exclude-glob .git* --exclude .git/"
+deploy-packages:
+  stage: deploy
+  image: maven:latest
+  before_script:
+    # Install JFrog CLI
+    -  curl -fL https://getcli.jfrog.io | sh
+    # Configure Artifactory instance with JFrog CLI
+    - ./jfrog rt config --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USER --password=$ARTIFACTORY_PASS
+    - ./jfrog rt c show
+    # Set the M2_HOME environment variable
+    - export M2_HOME=/usr/share/maven
+    # Replace the repository name in the configuration.yml to the correct one.
+    - sed -i 's,MAVEN_REPO_KEY,'"$MAVEN_REPO_KEY"',g' configuration.yml
+  script:
+    # Run the MVN command
+    - ./jfrog rt mvn "clean install" configuration.yml --build-name=gitlabci-maven-artifactory --build-number=$CI_JOB_ID
+    # Collect the environment variables
+    - ./jfrog rt bce gitlabci-maven-artifactory $CI_JOB_ID
+    # Pass the build information to Artifactory
+    - ./jfrog rt bp gitlabci-maven-artifactory $CI_JOB_ID
+  only:
+    - master
+deploy-localization:
+  stage: deploy
+  only:
+    - master
+  script:
+    - apt-get update -qq && apt-get install -y -qq lftp
+    - lftp -c "set ftp:ssl-allow no; open -u $USERNAME,$PASSWORD $HOST; mirror -Rev ./src/main/resources/localization ./httpdocs/$CI_PROJECT_NAME/localization/localization  --ignore-time --parallel=10 --exclude-glob .git* --exclude .git/"

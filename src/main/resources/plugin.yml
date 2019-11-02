@@ -1,0 +1,4 @@
+name: RebootCore
+version: ${project.version}
+main: dev.radmacher.rebootcore.RebootCore
+api-version: 1.13
