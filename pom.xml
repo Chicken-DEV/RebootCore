@@ -62,26 +62,10 @@
     </build>
 
     <repositories>
-        <!--<repository>
+        <repository>
             <id>private</id>
-            <url>https://repo.songoda.com/artifactory/private/</url>
+            <url>http://maven.radmacher.dev/artifactory/privateproxy</url>
         </repository>
-        <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
-        <repository>
-            <id>papermc-repo</id>
-            <url>https://papermc.io/repo/repository/maven-public/</url>
-        </repository>
-        <repository>
-            <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/groups/public/</url>
-        </repository>
-        <repository>
-            <id>viaversion</id>
-            <url>https://repo.viaversion.com/</url>
-        </repository>-->
     </repositories>
 
     <dependencies>
