@@ -51,10 +51,10 @@ deploy-packages:
     - ./jfrog rt bp gitlabci-maven-artifactory $CI_JOB_ID
   only:
     - master
-deploy-localization:
-  stage: deploy
-  only:
-    - master
-  script:
-    - apt-get update -qq && apt-get install -y -qq lftp
-    - lftp -c "set ftp:ssl-allow no; open -u $USERNAME,$PASSWORD $HOST; mirror -Rev ./src/main/resources/localization ./httpdocs/$CI_PROJECT_NAME/localization/localization  --ignore-time --parallel=10 --exclude-glob .git* --exclude .git/"
+#deploy-localization:
+#  stage: deploy
+#  only:
+#    - master
+#  script:
+#    - apt-get update -qq && apt-get install -y -qq lftp
+#    - lftp -c "set ftp:ssl-allow no; open -u $USERNAME,$PASSWORD $HOST; mirror -Rev ./src/main/resources/localization ./httpdocs/$CI_PROJECT_NAME/localization/localization  --ignore-time --parallel=10 --exclude-glob .git* --exclude .git/"
