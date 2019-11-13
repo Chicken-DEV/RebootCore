@@ -2,7 +2,10 @@ package dev.radmacher.rebootcore;
 
 import dev.radmacher.rebootcore.commands.CommandManager;
 import dev.radmacher.rebootcore.compatibility.ClientVersion;
-import dev.radmacher.rebootcore.core.*;
+import dev.radmacher.rebootcore.core.LocaleModule;
+import dev.radmacher.rebootcore.core.PluginInfo;
+import dev.radmacher.rebootcore.core.RebootCoreCommand;
+import dev.radmacher.rebootcore.core.RebootCoreDiagCommand;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -17,17 +20,9 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -155,9 +150,9 @@ public final class RebootCore {
         Bukkit.getPluginManager().registerEvents(loginListener, piggybackedPlugin);
         Bukkit.getPluginManager().registerEvents(shadingListener, piggybackedPlugin);
         // we aggressevely want to own this command
-        tasks.add(Bukkit.getScheduler().runTaskLaterAsynchronously(piggybackedPlugin, ()->{CommandManager.registerCommandDynamically(piggybackedPlugin, "songoda", commandManager, commandManager);}, 10 * 60 * 1));
-        tasks.add(Bukkit.getScheduler().runTaskLaterAsynchronously(piggybackedPlugin, ()->{CommandManager.registerCommandDynamically(piggybackedPlugin, "songoda", commandManager, commandManager);}, 20 * 60 * 1));
-        tasks.add(Bukkit.getScheduler().runTaskLaterAsynchronously(piggybackedPlugin, ()->{CommandManager.registerCommandDynamically(piggybackedPlugin, "songoda", commandManager, commandManager);}, 20 * 60 * 2));
+        tasks.add(Bukkit.getScheduler().runTaskLaterAsynchronously(piggybackedPlugin, ()->{CommandManager.registerCommandDynamically(piggybackedPlugin, "reboot", commandManager, commandManager);}, 10 * 60 * 1));
+        tasks.add(Bukkit.getScheduler().runTaskLaterAsynchronously(piggybackedPlugin, ()->{CommandManager.registerCommandDynamically(piggybackedPlugin, "reboot", commandManager, commandManager);}, 20 * 60 * 1));
+        tasks.add(Bukkit.getScheduler().runTaskLaterAsynchronously(piggybackedPlugin, ()->{CommandManager.registerCommandDynamically(piggybackedPlugin, "reboot", commandManager, commandManager);}, 20 * 60 * 2));
         tasks.add(Bukkit.getScheduler().runTaskLaterAsynchronously(piggybackedPlugin, ()->registerAllPlugins(), 20 * 60 * 2));
     }
 
@@ -260,47 +255,6 @@ public final class RebootCore {
         System.out.println("Updating " + plugin.getRebootID());
     }
 
-    private void updatex(PluginInfo plugin) {
-        try {
-            URL url = new URL("https://update.songoda.com/index.php?plugin=" + plugin.getRebootID()
-                    + "&version=" + plugin.getJavaPlugin().getDescription().getVersion()
-                    + "&updaterVersion=" + updaterVersion);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11");
-            urlConnection.setRequestProperty("Accept", "*/*");
-            urlConnection.setConnectTimeout(5000);
-            InputStream is = urlConnection.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is);
-
-            int numCharsRead;
-            char[] charArray = new char[1024];
-            StringBuilder sb = new StringBuilder();
-            while ((numCharsRead = isr.read(charArray)) > 0) {
-                sb.append(charArray, 0, numCharsRead);
-            }
-            urlConnection.disconnect();
-
-            String jsonString = sb.toString();
-            JSONObject json = (JSONObject) new JSONParser().parse(jsonString);
-
-            plugin.setLatestVersion((String) json.get("latestVersion"));
-            plugin.setMarketplaceLink((String) json.get("link"));
-            plugin.setNotification((String) json.get("notification"));
-            plugin.setChangeLog((String) json.get("changeLog"));
-
-            plugin.setJson(json);
-
-            for (PluginInfoModule module : plugin.getModules()) {
-                module.run(plugin);
-            }
-        } catch (IOException e) {
-            final String er = e.getMessage();
-            System.out.println("Connection with Songoda servers failed: " + (er.contains("URL") ? er.substring(0, er.indexOf("URL") + 3) : er));
-        } catch (ParseException e) {
-            System.out.println("Failed to parse json for " + plugin.getJavaPlugin().getName() + " update check");
-        }
-    }
-
     public static List<PluginInfo> getPlugins() {
         return new ArrayList<>(registeredPlugins);
     }
@@ -384,7 +338,7 @@ public final class RebootCore {
             if(last != null && now - 10000 < last) return;
             lastCheck.put(player.getUniqueId(), now);
             // is this player good to revieve update notices?
-            if (!event.getPlayer().isOp() && !player.hasPermission("songoda.updatecheck")) return;
+            if (!event.getPlayer().isOp() && !player.hasPermission("reboot.updatecheck")) return;
             // check for updates! ;)
             for (PluginInfo plugin : getPlugins()) {
                 if (plugin.getNotification() != null && plugin.getJavaPlugin().isEnabled())
@@ -410,7 +364,7 @@ public final class RebootCore {
                     Bukkit.getServicesManager().register(RebootCore.class, INSTANCE, piggybackedPlugin, ServicePriority.Normal);
                     Bukkit.getPluginManager().registerEvents(loginListener, piggybackedPlugin);
                     Bukkit.getPluginManager().registerEvents(shadingListener, piggybackedPlugin);
-                    CommandManager.registerCommandDynamically(piggybackedPlugin, "songoda", commandManager, commandManager);
+                    CommandManager.registerCommandDynamically(piggybackedPlugin, "reboot", commandManager, commandManager);
                 }
             }
         }
